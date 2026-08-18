@@ -23,47 +23,44 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android SDK Licenses
+      - name: Accept Android SDK Licenses & Setup Environment
         run: |
+          export ANDROID_SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
           yes | sdkmanager --licenses || true
-
-      - name: Generate Local Debug Keystore If Missing
-        run: |
-          if [ ! -f "debug.keystore" ]; then
-            keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          fi
 
       - name: Make Gradle Wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Build Release APK with Gradle 9.3.1
-        run: ./gradlew assembleRelease --stacktrace --no-daemon
+      - name: Build APK with Gradle
+        run: ./gradlew assemble --stacktrace --no-daemon
 
       - name: Locate and Prepare Release APK
         run: |
           mkdir -p app/build/outputs/apk/release
-          if [ -f "app/build/outputs/apk/release/app-release-unsigned.apk" ] && [ ! -f "app/build/outputs/apk/release/app-release.apk" ]; then
-            cp app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release.apk
+          echo "Listing all built APK files:"
+          find app/build/outputs/ -name "*.apk"
+          
+          # Find best candidate APK
+          RELEASE_APK=$(find app/build/outputs/apk/ -type f -name "*release*.apk" | head -n 1)
+          if [ -z "$RELEASE_APK" ]; then
+            RELEASE_APK=$(find app/build/outputs/apk/ -type f -name "*.apk" | head -n 1)
           fi
-          if [ ! -f "app/build/outputs/apk/release/app-release.apk" ]; then
-            APK_FOUND=$(find app/build/outputs/ -name "*.apk" | head -n 1)
-            if [ -n "$APK_FOUND" ]; then
-              echo "Found APK: $APK_FOUND, copying to release destination"
-              cp "$APK_FOUND" app/build/outputs/apk/release/app-release.apk
-            else
-              echo "ERROR: No release APK found in build outputs!"
-              exit 1
-            fi
+          
+          if [ -n "$RELEASE_APK" ] && [ -f "$RELEASE_APK" ]; then
+            echo "Selected APK: $RELEASE_APK"
+            cp "$RELEASE_APK" app/build/outputs/apk/release/CDSPFastRPCTest-release.apk
+            ls -la app/build/outputs/apk/release/CDSPFastRPCTest-release.apk
+          else
+            echo "ERROR: No APK was generated!"
+            find app/build/ -name "*.apk" || true
+            exit 1
           fi
-          ls -la app/build/outputs/apk/release/app-release.apk
 
-      - name: Upload Release APK Artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CDSPFastRPCTest-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/CDSPFastRPCTest-release.apk
           if-no-files-found: error
           retention-days: 30
