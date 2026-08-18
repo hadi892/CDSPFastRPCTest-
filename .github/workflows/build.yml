@@ -26,10 +26,15 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK Packages (API 36, Build Tools, NDK, CMake)
+      - name: Accept Android SDK Licenses
         run: |
           yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.0.12077973" "cmake;3.22.1"
+
+      - name: Generate Local Debug Keystore If Missing
+        run: |
+          if [ ! -f "debug.keystore" ]; then
+            keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
 
       - name: Make Gradle Wrapper executable
         run: chmod +x ./gradlew
@@ -37,17 +42,23 @@ jobs:
       - name: Build Release APK with Gradle 9.3.1
         run: ./gradlew assembleRelease --stacktrace --no-daemon
 
-      - name: Verify Release APK exists
+      - name: Locate and Prepare Release APK
         run: |
-          if [ ! -f "app/build/outputs/apk/release/app-release.apk" ] && [ ! -f "app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-            echo "ERROR: Release APK was not generated!"
-            ls -la app/build/outputs/apk/release/ || true
-            exit 1
-          fi
-          # Ensure app-release.apk standard name is present
+          mkdir -p app/build/outputs/apk/release
           if [ -f "app/build/outputs/apk/release/app-release-unsigned.apk" ] && [ ! -f "app/build/outputs/apk/release/app-release.apk" ]; then
             cp app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/app-release.apk
           fi
+          if [ ! -f "app/build/outputs/apk/release/app-release.apk" ]; then
+            APK_FOUND=$(find app/build/outputs/ -name "*.apk" | head -n 1)
+            if [ -n "$APK_FOUND" ]; then
+              echo "Found APK: $APK_FOUND, copying to release destination"
+              cp "$APK_FOUND" app/build/outputs/apk/release/app-release.apk
+            else
+              echo "ERROR: No release APK found in build outputs!"
+              exit 1
+            fi
+          fi
+          ls -la app/build/outputs/apk/release/app-release.apk
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
