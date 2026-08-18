@@ -25,10 +25,10 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Set up Gradle
+      - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 'current'
+          gradle-version: '9.3.1'
           cache-read-only: false
 
       - name: Accept Android SDK Licenses & Setup Environment
@@ -37,9 +37,9 @@ jobs:
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
           yes | sdkmanager --licenses || true
 
-      - name: Build APK with Gradle
+      - name: Build APK with Gradle 9.3.1
         run: |
-          # Ensure gradlew exists or generate it
+          # Ensure gradlew exists or generate it using Gradle 9.3.1
           if [ -f "./gradlew" ]; then
             echo "Found ./gradlew in root"
             chmod +x ./gradlew
@@ -52,8 +52,8 @@ jobs:
             cd "$DIR_PATH"
             ./gradlew assemble --stacktrace --no-daemon
           else
-            echo "Generating Gradle wrapper..."
-            gradle wrapper || true
+            echo "Generating Gradle 9.3.1 wrapper..."
+            gradle wrapper --gradle-version 9.3.1 || true
             if [ -f "./gradlew" ]; then
               chmod +x ./gradlew
               ./gradlew assemble --stacktrace --no-daemon
