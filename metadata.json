@@ -1,0 +1,6 @@
+{
+  "name": "CDSPFastRPCTest",
+  "description": "Qualcomm CDSP FastRPC hardware loader and security boundary diagnostic tool for Samsung Galaxy Tab A9+ 5G (SM-X216B).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

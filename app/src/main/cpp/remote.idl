@@ -1,0 +1,23 @@
+// ============================================================================
+// Qualcomm FastRPC Remote IDL Definition for CDSP Proof-of-Concept
+// Interface: remote_test / calculator
+// Target: Qualcomm SM6375 (Blair) - Qualcomm Hexagon CDSP (Compute DSP)
+// ============================================================================
+
+#ifndef REMOTE_TEST_IDL
+#define REMOTE_TEST_IDL
+
+#include "AEEStdDef.idl"
+
+interface remote_test {
+    /**
+     * Minimal arithmetic verification function to prove remote DSP code execution.
+     * @param a First 32-bit integer operand
+     * @param b Second 32-bit integer operand
+     * @param result Output buffer receiving computed sum from CDSP hardware
+     * @return 0 on success (AEE_SUCCESS), or Qualcomm FastRPC / Hexagon error code
+     */
+    long test_add(in long a, in long b, rout long result);
+};
+
+#endif // REMOTE_TEST_IDL
